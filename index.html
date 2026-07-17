@@ -270,7 +270,7 @@ section{scroll-margin-top:84px;}
   overflow:hidden;
   isolation:isolate;
 }
-.hero-bg{position:absolute;inset:0;z-index:0;}
+.hero-bg{position:absolute;inset:0;z-index:0;perspective:1400px;}
 .hero-grid{
   position:absolute;inset:0;
   background-image:
@@ -294,13 +294,18 @@ section{scroll-margin-top:84px;}
   z-index:1;
   opacity:.9;
 }
+/* Broken/cracked phones floating with a 3D tilt — transform-only animation (translate3d + rotate3d)
+   so it stays GPU-accelerated and light, no layout/paint thrash. */
 .hero-phones .phone{
   position:absolute;
   border-radius:6px;
   background:linear-gradient(155deg, #2a2a2d, #141416);
   border:1px solid rgba(255,255,255,.08);
   box-shadow:0 14px 30px rgba(0,0,0,.5);
-  animation:floaty 6s ease-in-out infinite;
+  animation:floaty 6.5s ease-in-out infinite;
+  transform-style:preserve-3d;
+  will-change:transform;
+  backface-visibility:hidden;
 }
 .hero-phones .phone.accent{background:linear-gradient(155deg, var(--red), var(--red-dark)); border-color:rgba(255,255,255,.15);}
 .hero-phones .phone::after{
@@ -310,9 +315,25 @@ section{scroll-margin-top:84px;}
   border-radius:3px;
   background:rgba(255,255,255,.05);
 }
+/* cracked-glass overlay — a single lightweight inline SVG, painted once (not animated), so it costs nothing per frame */
+.hero-phones .phone::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:6px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 170'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.1' stroke-linecap='round' opacity='0.75'%3E%3Cpath d='M52 8 L47 34 L63 52 L41 66 L58 90 L38 112 L54 138 L45 165'/%3E%3Cpath d='M47 34 L20 44'/%3E%3Cpath d='M63 52 L88 40'/%3E%3Cpath d='M41 66 L12 72'/%3E%3Cpath d='M58 90 L90 96'/%3E%3Cpath d='M38 112 L14 130'/%3E%3Cpath d='M54 138 L82 148'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:cover;
+  background-repeat:no-repeat;
+  mix-blend-mode:screen;
+  pointer-events:none;
+}
+/* a chipped/broken corner on some units, via clip-path — static, cheap */
+.hero-phones .phone.broken{
+  clip-path:polygon(0 0, 76% 0, 100% 16%, 100% 100%, 0 100%);
+}
 @keyframes floaty{
-  0%,100%{transform:translateY(0) rotate(var(--rot,0deg));}
-  50%{transform:translateY(-14px) rotate(var(--rot,0deg));}
+  0%,100%{transform:translate3d(0,0,0) rotate3d(0.4,1,0,0deg) rotate(var(--rot,0deg));}
+  50%{transform:translate3d(0,-16px,40px) rotate3d(0.4,1,0,10deg) rotate(var(--rot,0deg));}
 }
 .hero-flagwave{
   position:absolute;
@@ -480,6 +501,47 @@ section{scroll-margin-top:84px;}
 .step p{font-size:13.5px;color:var(--gray);line-height:1.55;}
 
 /* ============================================================
+   LAYANAN — kondisi HP yang diterima
+============================================================ */
+.layanan{padding:96px 0 100px;background:var(--cream);}
+.layanan-head{max-width:620px;margin:0 auto 48px;}
+.layanan-desc{font-size:15px;color:var(--gray);line-height:1.6;margin-top:2px;}
+.layanan-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;
+}
+.layanan-card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:28px 24px;
+  transition:transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s var(--ease);
+}
+.layanan-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 16px 30px rgba(0,0,0,.07);
+  border-color:rgba(227,30,36,.28);
+}
+.layanan-icon{
+  width:46px;height:46px;
+  border-radius:11px;
+  background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;
+  transition:transform .3s var(--ease);
+}
+.layanan-card:hover .layanan-icon{transform:scale(1.08) rotate(-4deg);}
+.layanan-icon svg{width:22px;height:22px;color:var(--white);}
+.layanan-card h4{font-family:var(--font-display);font-size:15.5px;font-weight:700;margin-bottom:6px;}
+.layanan-card p{font-size:13px;color:var(--gray);line-height:1.5;}
+.layanan-card.accent{background:var(--black);border-color:rgba(255,255,255,.08);}
+.layanan-card.accent .layanan-icon{background:var(--white);}
+.layanan-card.accent .layanan-icon svg{color:var(--red);}
+.layanan-card.accent h4{color:var(--white);}
+.layanan-card.accent p{color:rgba(255,255,255,.6);}
+
+/* ============================================================
    VIDEO SHOWCASE — signature "cracked glass" moment
 ============================================================ */
 .video-showcase{
@@ -642,9 +704,11 @@ section{scroll-margin-top:84px;}
 .video-modal-close svg{width:18px;height:18px;color:var(--white);}
 
 /* ============================================================
-   BENEFITS + FORM
+   VALUE REVEAL — "Anatomi HP Rongsok" interactive exhibit
+   Replaces the old static benefit-cards + signup form with a
+   single explorable diagram: why a dead phone still has value,
+   and where that value goes once it enters the network.
 ============================================================ */
-.benefits-form{padding:96px 0;background:var(--cream);}
 .two-col{
   display:grid;
   grid-template-columns:1.15fr .85fr;
@@ -653,117 +717,103 @@ section{scroll-margin-top:84px;}
   min-width:0;
 }
 .two-col > *{min-width:0;}
-.benefit-grid{
+
+.value-reveal{padding:100px 0 108px;background:var(--cream);position:relative;overflow:hidden;}
+.value-intro{max-width:640px;margin-bottom:56px;}
+.value-desc{font-size:15.5px;line-height:1.7;color:var(--gray);max-width:560px;}
+
+.anatomy{
   display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:16px;
-  margin-top:32px;
+  grid-template-columns:.85fr 1fr;
+  gap:52px;
+  align-items:center;
 }
-.benefit-card{
+.anatomy-visual{
+  position:relative;
+  aspect-ratio:260/480;
+  max-width:300px;
+  margin:0 auto;
+}
+.anatomy-phone{width:100%;height:100%;display:block;filter:drop-shadow(0 26px 40px rgba(14,14,16,.18));}
+.anatomy-crack{stroke:rgba(255,255,255,.4);stroke-width:1.1;fill:none;stroke-linecap:round;}
+.anatomy-ghost{fill:none;stroke-dasharray:4 3;}
+
+/* hotspots — reuse the map's pulse-ring motion language for a consistent brand system */
+.hotspot{
+  position:absolute;
+  left:calc(var(--hx) * 1%);
+  top:calc(var(--hy) * 1%);
+  width:32px;height:32px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  z-index:2;
+}
+.hotspot::before{
+  content:'';
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:1.5px solid var(--red);
+  opacity:.55;
+  transform-origin:center;
+  animation:pin-pulse 2.6s ease-out infinite;
+  animation-delay:var(--delay,0s);
+}
+.hotspot .dot{
+  width:10px;height:10px;
+  border-radius:50%;
+  background:var(--red);
+  box-shadow:0 0 0 4px rgba(227,30,36,.16);
+  transition:transform .25s var(--ease), background .25s var(--ease);
+}
+.hotspot:hover .dot, .hotspot:focus-visible .dot{transform:scale(1.2);}
+.hotspot.active .dot{background:var(--black);transform:scale(1.35);box-shadow:0 0 0 5px rgba(14,14,16,.14);}
+.hotspot.active::before{border-color:var(--black);opacity:.35;}
+.hotspot:focus-visible{outline:2px solid var(--black);outline-offset:4px;}
+
+.anatomy-detail{
   background:var(--white);
   border:1px solid var(--line);
-  border-radius:12px;
-  padding:26px 22px;
-  transition:transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s var(--ease);
-}
-.benefit-card:hover{
-  transform:translateY(-5px);
-  box-shadow:0 16px 30px rgba(0,0,0,.07);
-  border-color:rgba(227,30,36,.25);
-}
-.benefit-icon{
-  width:46px;height:46px;
-  border-radius:11px;
-  background:var(--red);
-  display:flex;align-items:center;justify-content:center;
-  margin-bottom:16px;
-  transition:transform .3s var(--ease);
-}
-.benefit-card:hover .benefit-icon{transform:scale(1.08) rotate(-4deg);}
-.benefit-icon svg{width:22px;height:22px;color:var(--white);}
-.benefit-card h4{font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:6px;}
-.benefit-card p{font-size:13px;color:var(--gray);line-height:1.5;}
-
-.form-card{
-  background:linear-gradient(155deg, var(--red), var(--red-dark));
   border-radius:16px;
-  padding:34px 30px;
-  color:var(--white);
-  box-shadow:0 22px 44px rgba(227,30,36,.25);
-  position:relative;
-  overflow:hidden;
+  padding:32px 30px;
+  min-height:236px;
+  display:flex;
+  align-items:center;
 }
-.form-card h3{
-  font-family:var(--font-display);
-  font-size:21px;font-weight:800;
-  margin-bottom:22px;
-}
-.field{margin-bottom:14px;}
-.field label{
-  display:block;
-  font-size:12px;font-weight:600;
-  margin-bottom:6px;
-  color:rgba(255,255,255,.85);
-}
-.field input{
+.anatomy-detail-inner{
+  opacity:1;
+  transform:translateY(0);
+  transition:opacity .18s var(--ease), transform .18s var(--ease);
   width:100%;
-  padding:12px 14px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,.25);
-  background:rgba(255,255,255,.1);
-  color:var(--white);
-  font-size:14px;
-  transition:border-color .25s, background .25s;
 }
-.field input::placeholder{color:rgba(255,255,255,.55);}
-.field input:focus{
-  outline:none;
-  border-color:var(--white);
-  background:rgba(255,255,255,.16);
+.anatomy-detail-inner.is-out{opacity:0;transform:translateY(6px);}
+.anatomy-detail-tag{
+  font-family:var(--font-mono);
+  font-size:11.5px;font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;
+  color:var(--red);margin-bottom:10px;
 }
-.checks{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:9px 14px;
-  margin:6px 0 22px;
-}
-.check-item{
+.anatomy-detail h3{font-family:var(--font-display);font-size:19px;font-weight:800;margin-bottom:10px;line-height:1.3;}
+.anatomy-detail p{font-size:14px;line-height:1.65;color:var(--gray);}
+.anatomy-hint{
   display:flex;align-items:center;gap:8px;
-  font-size:13px;
-  cursor:pointer;
+  font-size:12px;color:var(--gray-deep);
+  margin-top:18px;
 }
-.check-item input{
-  width:16px;height:16px;
-  accent-color:var(--white);
-  cursor:pointer;
-}
-.form-card .btn-primary{
-  background:var(--black);
-  box-shadow:none;
-}
-.form-card .btn-primary:hover{background:#000;}
-.form-note{font-size:11.5px;color:rgba(255,255,255,.6);margin-top:12px;text-align:center;}
+.anatomy-hint svg{width:15px;height:15px;flex-shrink:0;}
 
-.form-success{
-  text-align:center;
-  padding:30px 10px;
+.value-cta{
+  margin-top:56px;
+  padding-top:40px;
+  border-top:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:18px;
 }
-.success-check{
-  width:62px;height:62px;
-  margin:0 auto 18px;
-  border-radius:50%;
-  background:rgba(255,255,255,.15);
-  display:flex;align-items:center;justify-content:center;
-}
-.success-check svg{width:30px;height:30px;color:var(--white);}
-.success-check svg path{
-  stroke-dasharray:30;
-  stroke-dashoffset:30;
-  animation:draw-check .5s ease forwards .1s;
-}
-@keyframes draw-check{to{stroke-dashoffset:0;}}
-.form-success h4{font-family:var(--font-display);font-size:18px;margin-bottom:8px;}
-.form-success p{font-size:13.5px;color:rgba(255,255,255,.78);}
+.value-cta p{font-family:var(--font-display);font-weight:700;font-size:17px;max-width:420px;}
+.value-cta p span{color:var(--red);}
 
 /* ============================================================
    MAP + TESTIMONIALS
@@ -941,6 +991,9 @@ section{scroll-margin-top:84px;}
 ============================================================ */
 @media (max-width:980px){
   .two-col, .map-testimoni .two-col{grid-template-columns:1fr;}
+  .anatomy{grid-template-columns:1fr;gap:36px;}
+  .anatomy-visual{max-width:240px;}
+  .layanan-grid{grid-template-columns:repeat(2,1fr);}
   .stats-grid{grid-template-columns:repeat(2,1fr);}
   .stat-item:nth-child(3){border-left:none;}
   .steps{grid-template-columns:repeat(2,1fr);gap:36px 20px;}
@@ -979,14 +1032,16 @@ section{scroll-margin-top:84px;}
   .stat-item:first-child{border-top:none;}
   .how-it-works{padding:56px 0 60px;}
   .steps{grid-template-columns:1fr;gap:30px;margin-top:36px;}
+  .layanan{padding:56px 0 60px;}
+  .layanan-grid{grid-template-columns:1fr;}
   .video-showcase{padding:60px 0 64px;}
   .video-sub{margin-bottom:32px;}
   .video-play{width:62px;height:62px;}
   .video-play svg{width:22px;height:22px;}
-  .benefits-form{padding:60px 0;}
-  .benefit-grid{grid-template-columns:1fr;margin-top:24px;}
-  .form-col{margin-top:8px;}
-  .checks{grid-template-columns:1fr;}
+  .value-reveal{padding:60px 0 64px;}
+  .anatomy{grid-template-columns:1fr;gap:32px;}
+  .anatomy-visual{max-width:220px;}
+  .value-cta{flex-direction:column;align-items:flex-start;}
   .map-testimoni{padding:60px 0;}
   .map-testimoni .two-col{gap:40px;}
   .testimoni-col{margin-top:8px;}
@@ -1015,6 +1070,7 @@ section{scroll-margin-top:84px;}
     <nav class="main-nav" id="mainNav">
       <a href="#beranda" class="nav-link active">Beranda</a>
       <a href="#cara-kerja" class="nav-link">Cara Kerja</a>
+      <a href="#layanan" class="nav-link">Layanan</a>
       <a href="#video-profil" class="nav-link">Video</a>
       <a href="#menjadi-mitra" class="nav-link">Menjadi Mitra</a>
       <a href="#tentang" class="nav-link">Tentang Kami</a>
@@ -1049,7 +1105,7 @@ section{scroll-margin-top:84px;}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Daftar Menjadi Mitra
         </a>
-        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" class="btn btn-outline">
+        <a href="https://wa.me/628211335385" target="_blank" rel="noopener" class="btn btn-outline">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.8-.4-1.7-1-2.4-1.7-.7-.7-1.3-1.5-1.7-2.4-.1-.3 0-.4.1-.6.2-.2.8-.7 1.1-.9.2-.2.1-.4 0-.7-.1-.3-.7-1.7-.9-2-.2-.4-.4-.4-.6-.4h-.6c-.2 0-.5.1-.7.3-.7.7-1 1.6-1 2.6.1 1.1.6 2.2 1.4 3.2 1.6 2 3.5 3.6 5.8 4.5.6.3 1.2.4 1.8.5.7.1 1.4 0 2-.3.5-.3.9-.7 1.1-1.2.1-.3.1-.6 0-.9-.1-.1-.2-.2-.3-.3z"/><path d="M12 2C6.5 2 2 6.4 2 11.8c0 1.9.5 3.7 1.5 5.3L2 22l5.1-1.3c1.5.8 3.2 1.3 5 1.3 5.5 0 10-4.4 10-9.9C22.1 6.4 17.6 2 12 2z"/></svg>
           Jual HP Rongsok Sekarang
         </a>
@@ -1133,6 +1189,51 @@ section{scroll-margin-top:84px;}
 </section>
 
 <!-- ============================================================
+     LAYANAN
+============================================================ -->
+<section class="layanan" id="layanan">
+  <div class="container">
+    <div class="layanan-head reveal">
+      <p class="eyebrow">Layanan Profesional</p>
+      <h2 class="section-title">Kami Terima Semua Kondisi HP Rusak</h2>
+      <p class="layanan-desc">Melayani pembelian berbagai kondisi HP rusak, dari yang masih bisa diselamatkan sampai yang tinggal rangkanya saja.</p>
+    </div>
+    <div class="layanan-grid reveal-stagger">
+      <div class="layanan-card">
+        <div class="layanan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
+        <h4>HP Mati Total</h4>
+        <p>Menerima berbagai jenis HP yang sudah tidak bisa menyala sama sekali.</p>
+      </div>
+      <div class="layanan-card">
+        <div class="layanan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 5 L10 9 L14 12 L9 15 L13 19"/></svg></div>
+        <h4>HP Layar Pecah</h4>
+        <p>Membeli HP dengan kondisi LCD pecah atau touchscreen yang sudah rusak.</p>
+      </div>
+      <div class="layanan-card">
+        <div class="layanan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
+        <h4>HP Bootloop</h4>
+        <p>Menerima perangkat yang mengalami bootloop dan gagal masuk ke sistem.</p>
+      </div>
+      <div class="layanan-card">
+        <div class="layanan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8.5 7 13a7 7 0 0 1-14 0c0-4.5 7-13 7-13z"/></svg></div>
+        <h4>HP Kena Air</h4>
+        <p>Menerima HP yang mengalami kerusakan akibat terkena cairan atau air.</p>
+      </div>
+      <div class="layanan-card">
+        <div class="layanan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg></div>
+        <h4>HP Rusak Mesin</h4>
+        <p>Membeli HP dengan kerusakan IC, motherboard, atau komponen utama lainnya.</p>
+      </div>
+      <div class="layanan-card accent">
+        <div class="layanan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <h4>Jemput Lokasi</h4>
+        <p>Untuk area tertentu, tim kami bisa datang langsung menjemput barangnya.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
      VIDEO SHOWCASE
 ============================================================ -->
 <section class="video-showcase" id="video-profil">
@@ -1189,70 +1290,60 @@ section{scroll-margin-top:84px;}
 </div>
 
 <!-- ============================================================
-     BENEFITS + FORM
+     VALUE REVEAL — Anatomi HP Rongsok
 ============================================================ -->
-<section class="benefits-form" id="menjadi-mitra">
-  <div class="container two-col">
-    <div class="benefits-col reveal">
-      <p class="eyebrow">Kenapa Bergabung</p>
-      <h2 class="section-title">Keuntungan Menjadi Mitra</h2>
-      <div class="benefit-grid reveal-stagger" id="benefitGrid">
-        <div class="benefit-card">
-          <div class="benefit-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M5 4H3v2a4 4 0 0 0 4 4M19 4h2v2a4 4 0 0 1-4 4"/></svg></div>
-          <h4>Harga Kompetitif</h4>
-          <p>Kami membeli dalam jumlah besar dengan harga terbaik.</p>
-        </div>
-        <div class="benefit-card">
-          <div class="benefit-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg></div>
-          <h4>Pembelian Nasional</h4>
-          <p>Menerima kiriman dari seluruh kota di Indonesia.</p>
-        </div>
-        <div class="benefit-card">
-          <div class="benefit-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
-          <h4>Pembayaran Aman</h4>
-          <p>Transfer cepat setelah barang diterima dan sesuai kesepakatan.</p>
-        </div>
-        <div class="benefit-card">
-          <div class="benefit-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 1 1-3.2 2.4"/></svg></div>
-          <h4>Support Jangka Panjang</h4>
-          <p>Cocok untuk pengepul yang ingin berkembang bersama kami.</p>
+<section class="value-reveal" id="menjadi-mitra">
+  <div class="container">
+    <div class="value-intro reveal">
+      <p class="eyebrow">Kenapa HP Rusak Berharga</p>
+      <h2 class="section-title">Di Balik Layar yang Retak,<br>Ada yang Masih Bisa Diselamatkan</h2>
+      <p class="value-desc">Kebanyakan orang melihat HP mati sebagai sampah. Jaringan Loaknesia melihatnya sebagai bahan baku — setiap unit yang masuk dipilah, lalu bagiannya disalurkan ke jalur yang tepat. Ketuk tiap bagian untuk lihat ke mana nilainya mengalir.</p>
+    </div>
+
+    <div class="anatomy reveal">
+      <div class="anatomy-visual">
+        <svg class="anatomy-phone" viewBox="0 0 260 480" aria-hidden="true">
+          <rect x="30" y="20" width="200" height="440" rx="34" fill="#1c1c1f" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+          <rect class="anatomy-ghost" x="70" y="248" width="120" height="66" rx="6" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <rect x="82" y="260" width="16" height="14" rx="2" fill="rgba(255,255,255,.09)"/>
+          <rect x="104" y="260" width="24" height="8" rx="2" fill="rgba(255,255,255,.09)"/>
+          <rect x="82" y="282" width="40" height="8" rx="2" fill="rgba(255,255,255,.09)"/>
+          <rect class="anatomy-ghost" x="78" y="326" width="104" height="58" rx="10" stroke="rgba(227,30,36,.55)" stroke-width="1.2" fill="rgba(227,30,36,.08)"/>
+          <rect x="44" y="50" width="172" height="340" rx="18" fill="rgba(9,9,11,.88)"/>
+          <g class="anatomy-crack">
+            <path d="M130 60 L124 120 L150 155 L112 185 L145 230 L108 268 L138 310 L118 345"/>
+            <path d="M124 120 L90 138"/>
+            <path d="M150 155 L184 132"/>
+            <path d="M112 185 L74 196"/>
+            <path d="M145 230 L188 240"/>
+            <path d="M108 268 L76 292"/>
+            <path d="M138 310 L176 322"/>
+          </g>
+          <circle cx="130" cy="38" r="5" fill="#050506"/>
+          <rect x="110" y="398" width="40" height="5" rx="2.5" fill="rgba(255,255,255,.22)"/>
+          <rect x="228" y="130" width="4" height="46" rx="2" fill="rgba(255,255,255,.14)"/>
+          <rect x="228" y="188" width="4" height="30" rx="2" fill="rgba(255,255,255,.14)"/>
+        </svg>
+        <button class="hotspot" type="button" data-part="layar" aria-pressed="false" aria-label="Layar &amp; kaca" style="--hx:50;--hy:34;--delay:0s"><span class="dot"></span></button>
+        <button class="hotspot" type="button" data-part="kamera" aria-pressed="false" aria-label="Kamera &amp; sensor" style="--hx:50;--hy:8;--delay:.4s"><span class="dot"></span></button>
+        <button class="hotspot" type="button" data-part="papan" aria-pressed="false" aria-label="Papan sirkuit" style="--hx:23;--hy:59;--delay:.8s"><span class="dot"></span></button>
+        <button class="hotspot" type="button" data-part="baterai" aria-pressed="false" aria-label="Baterai" style="--hx:77;--hy:73;--delay:1.2s"><span class="dot"></span></button>
+        <button class="hotspot" type="button" data-part="rangka" aria-pressed="false" aria-label="Rangka &amp; casing" style="--hx:88;--hy:44;--delay:1.6s"><span class="dot"></span></button>
+      </div>
+
+      <div class="anatomy-detail">
+        <div class="anatomy-detail-inner" id="anatomyDetail">
+          <!-- filled by JS -->
         </div>
       </div>
     </div>
 
-    <div class="form-col reveal">
-      <div class="form-card">
-        <h3>Daftar Menjadi Mitra</h3>
-        <form id="mitraForm">
-          <div class="field">
-            <label for="nama">Nama Lengkap</label>
-            <input type="text" id="nama" placeholder="Masukkan nama lengkap" required>
-          </div>
-          <div class="field">
-            <label for="kota">Kota / Kabupaten</label>
-            <input type="text" id="kota" placeholder="Contoh: Bandung" required>
-          </div>
-          <div class="field">
-            <label for="wa">Nomor WhatsApp</label>
-            <input type="tel" id="wa" placeholder="08872549474" required>
-          </div>
-          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:8px;color:rgba(255,255,255,.85);">Bidang Usaha</label>
-          <div class="checks">
-            <label class="check-item"><input type="checkbox" name="bidang" value="Konter HP"> Konter HP</label>
-            <label class="check-item"><input type="checkbox" name="bidang" value="Lapak Rongsok"> Lapak Rongsok</label>
-            <label class="check-item"><input type="checkbox" name="bidang" value="Tukang Servis"> Tukang Servis</label>
-            <label class="check-item"><input type="checkbox" name="bidang" value="Lainnya"> Lainnya</label>
-            <label class="check-item"><input type="checkbox" name="bidang" value="Pengepul Elektronik"> Pengepul Elektronik</label>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">Gabung Jaringan Loaknesia</button>
-        </form>
-        <div class="form-success" id="formSuccess" hidden>
-          <div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
-          <h4>Pendaftaran Terkirim!</h4>
-          <p>Tim kami akan menghubungi Anda melalui WhatsApp dalam 1x24 jam.</p>
-        </div>
-        <p class="form-note">Tanpa biaya pendaftaran. Gratis selamanya.</p>
-      </div>
+    <div class="value-cta reveal">
+      <p>Setiap bagian yang kamu selamatkan <span>lewat jaringan ini bernilai</span> — jadi mitra pengumpulnya.</p>
+      <a href="https://wa.me/628211335385?text=Halo%2C%20saya%20ingin%20menjadi%20mitra%20Loaknesia" target="_blank" rel="noopener" class="btn btn-whatsapp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.8-.4-1.7-1-2.4-1.7-.7-.7-1.3-1.5-1.7-2.4-.1-.3 0-.4.1-.6.2-.2.8-.7 1.1-.9.2-.2.1-.4 0-.7-.1-.3-.7-1.7-.9-2-.2-.4-.4-.4-.6-.4h-.6c-.2 0-.5.1-.7.3-.7.7-1 1.6-1 2.6.1 1.1.6 2.2 1.4 3.2 1.6 2 3.5 3.6 5.8 4.5.6.3 1.2.4 1.8.5.7.1 1.4 0 2-.3.5-.3.9-.7 1.1-1.2.1-.3.1-.6 0-.9-.1-.1-.2-.2-.3-.3z"/><path d="M12 2C6.5 2 2 6.4 2 11.8c0 1.9.5 3.7 1.5 5.3L2 22l5.1-1.3c1.5.8 3.2 1.3 5 1.3 5.5 0 10-4.4 10-9.9C22.1 6.4 17.6 2 12 2z"/></svg>
+        Gabung Sebagai Mitra
+      </a>
     </div>
   </div>
 </section>
@@ -1345,7 +1436,7 @@ section{scroll-margin-top:84px;}
     <div class="reveal">
       <h2>Siap Menjadi Mitra<br><span class="text-red">Pengadaan HP Rongsok Nasional?</span></h2>
       <p>Hubungi kami sekarang juga melalui WhatsApp!</p>
-      <a href="https://wa.me/628872549474" target="_blank" rel="noopener" class="btn btn-whatsapp">
+      <a href="https://wa.me/628211335385" target="_blank" rel="noopener" class="btn btn-whatsapp">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.8-.4-1.7-1-2.4-1.7-.7-.7-1.3-1.5-1.7-2.4-.1-.3 0-.4.1-.6.2-.2.8-.7 1.1-.9.2-.2.1-.4 0-.7-.1-.3-.7-1.7-.9-2-.2-.4-.4-.4-.6-.4h-.6c-.2 0-.5.1-.7.3-.7.7-1 1.6-1 2.6.1 1.1.6 2.2 1.4 3.2 1.6 2 3.5 3.6 5.8 4.5.6.3 1.2.4 1.8.5.7.1 1.4 0 2-.3.5-.3.9-.7 1.1-1.2.1-.3.1-.6 0-.9-.1-.1-.2-.2-.3-.3z"/><path d="M12 2C6.5 2 2 6.4 2 11.8c0 1.9.5 3.7 1.5 5.3L2 22l5.1-1.3c1.5.8 3.2 1.3 5 1.3 5.5 0 10-4.4 10-9.9C22.1 6.4 17.6 2 12 2z"/></svg>
         Hubungi via WhatsApp
       </a>
@@ -1374,13 +1465,14 @@ section{scroll-margin-top:84px;}
       <h5>Navigasi</h5>
       <a href="#beranda">Beranda</a>
       <a href="#cara-kerja">Cara Kerja</a>
+      <a href="#layanan">Layanan</a>
       <a href="#video-profil">Video</a>
       <a href="#menjadi-mitra">Menjadi Mitra</a>
       <a href="#tentang">Tentang Kami</a>
     </div>
     <div class="footer-col">
       <h5>Kontak</h5>
-      <a href="https://wa.me/628872549474">WhatsApp: 0887-2549-474</a>
+      <a href="https://wa.me/628211335385">WhatsApp: 0821-1335-385</a>
       <a href="mailto:halo@loaknesia.id">halo@loaknesia.id</a>
       <div class="footer-socials">
         <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
@@ -1527,7 +1619,7 @@ section{scroll-margin-top:84px;}
     ];
     rects.forEach(function(r, i){
       var div = document.createElement('div');
-      div.className = 'phone' + (i % 4 === 0 ? ' accent' : '');
+      div.className = 'phone' + (i % 4 === 0 ? ' accent' : '') + (i % 3 === 0 ? ' broken' : '');
       div.style.position='absolute';
       div.style.left = r[0]+'px';
       div.style.top = r[1]+'px';
@@ -1590,15 +1682,69 @@ section{scroll-margin-top:84px;}
     track.parentElement.addEventListener('mouseleave', resetAuto);
   }
 
-  /* ---------- Mitra form submit ---------- */
-  var form = document.getElementById('mitraForm');
-  var success = document.getElementById('formSuccess');
-  if(form){
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
-      form.hidden = true;
-      success.hidden = false;
+  /* ---------- Anatomi HP: explorable value diagram ---------- */
+  var anatomyData = {
+    layar: {
+      tag: 'Layar & Kaca',
+      title: 'Layar Retak Bukan Berarti Mati',
+      desc: 'Panel dan kaca pelindung tetap menyimpan indium serta logam tanah jarang yang bisa diambil ulang untuk bikin layar baru — meski permukaannya sudah pecah.'
+    },
+    kamera: {
+      tag: 'Kamera & Sensor',
+      title: 'Modul Kecil, Nilai Tidak Kecil',
+      desc: 'Modul kamera dan sensor sering kali masih menyala normal. Kalau begitu, unitnya langsung dipakai lagi untuk servis HP lain, tanpa perlu diolah ulang.'
+    },
+    papan: {
+      tag: 'Papan Sirkuit',
+      title: 'Emas di Dalam Papan Sirkuit',
+      desc: 'Mainboard menyimpan emas, tembaga, dan paladium dalam jumlah kecil per unit — tapi terkumpul dari ribuan unit, jumlahnya cukup besar untuk didaur ulang secara profesional.'
+    },
+    baterai: {
+      tag: 'Baterai',
+      title: 'Baterai Lewat Jalur Sendiri',
+      desc: 'Baterai lithium tidak digabung dengan komponen lain. Diproses lewat jalur khusus supaya lithium dan kobalt di dalamnya aman diambil ulang, bukan berakhir jadi limbah berbahaya.'
+    },
+    rangka: {
+      tag: 'Rangka & Casing',
+      title: 'Logam yang Kembali Jadi Logam',
+      desc: 'Rangka aluminium dan bagian logam lainnya dilebur ulang jadi bahan baku industri — siklus paling sederhana dari semua bagian HP.'
+    }
+  };
+  var hotspots = document.querySelectorAll('.hotspot');
+  var anatomyDetail = document.getElementById('anatomyDetail');
+
+  function renderAnatomy(key, animate){
+    var d = anatomyData[key];
+    if(!d || !anatomyDetail) return;
+    var paint = function(){
+      anatomyDetail.innerHTML =
+        '<p class="anatomy-detail-tag">' + d.tag + '</p>' +
+        '<h3>' + d.title + '</h3>' +
+        '<p>' + d.desc + '</p>';
+      if(animate && !reduceMotion){
+        anatomyDetail.classList.remove('is-out');
+      }
+    };
+    if(animate && !reduceMotion){
+      anatomyDetail.classList.add('is-out');
+      setTimeout(paint, 160);
+    } else {
+      paint();
+    }
+  }
+
+  if(hotspots.length){
+    hotspots.forEach(function(h){
+      h.addEventListener('click', function(){
+        hotspots.forEach(function(o){ o.classList.remove('active'); o.setAttribute('aria-pressed', 'false'); });
+        h.classList.add('active');
+        h.setAttribute('aria-pressed', 'true');
+        renderAnatomy(h.getAttribute('data-part'), true);
+      });
     });
+    hotspots[0].classList.add('active');
+    hotspots[0].setAttribute('aria-pressed', 'true');
+    renderAnatomy(hotspots[0].getAttribute('data-part'), false);
   }
 
   /* ---------- Video showcase: lightbox modal ---------- */
